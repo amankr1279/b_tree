@@ -16,7 +16,7 @@ type bTree struct {
 func NewNode() *node {
 	return &node{
 		keys:     make([]int, 0),
-		isLeaf:   false,
+		isLeaf:   true,
 		children: make([]*node, 0),
 	}
 }
@@ -28,49 +28,76 @@ func NewBTree() *bTree {
 }
 
 func splitNode(x *node, index int) {
-	z := NewNode()
-	y := x.children[index]
+	rightChild := NewNode()
+	leftChild := x.children[index]
 	n := len(x.keys)
-	z.isLeaf = y.isLeaf
+	rightChild.isLeaf = leftChild.isLeaf
 	for i := 0; i < T-1; i++ {
-		z.keys = append(z.keys, y.keys[i+T])
+		rightChild.keys = append(rightChild.keys, leftChild.keys[i+T])
 	}
-	if !y.isLeaf {
+	if !leftChild.isLeaf {
 		for i := 0; i < T; i++ {
-			z.children = append(z.children, y.children[i+T])
+			rightChild.children = append(rightChild.children, leftChild.children[i+T])
 		}
 	}
 	x.children = append(x.children, nil)
 	for i := n + 1; i >= index+1; i-- {
 		x.children[i] = x.children[i-1]
 	}
-	x.children[index+1] = z
+	x.children[index+1] = rightChild
 	x.keys = append(x.keys, 0)
 	for i := n; i > index; i-- {
 		x.keys[i] = x.keys[i-1]
 	}
-	x.keys[index] = y.keys[T]
+	x.keys[index] = leftChild.keys[T]
 }
 
-func insertNonFull(s *node, val int) {
-	
+func insertNonFull(x *node, val int) {
+	i := len(x.keys) - 1 // last filled index
+	if x.isLeaf {
+		x.keys = append(x.keys, val) // just for maintaining indices
+		for i >= 0 && val < x.keys[i] {
+			x.keys[i+1] = x.keys[i]
+			i--
+		}
+		x.keys[i+1] = val
+	} else {
+		for i >= 0 && val < x.keys[i] {
+			i--
+		}
+		i++
+		if len(x.children) == (2*T - 1) {
+			splitNode(x, i)
+			if val > x.keys[i] {
+				i++
+			}
+			insertNonFull(x, val)
+		}
+	}
 }
 
-func Insert(val int, t *bTree) {
+func Insert(val int, t *bTree) error {
+	if t == nil {
+		err := fmt.Errorf("empty tree")
+		return err
+	}
 	n := len(t.root.keys)
 	if n == 2*T-1 {
-		s := NewNode()
-		s.children = append(s.children, t.root)
-		splitNode(s, 0)
-		insertNonFull(s, val)
+		newRoot := NewNode()
+		newRoot.children = append(newRoot.children, t.root)
+		splitNode(newRoot, 0)
+		insertNonFull(newRoot, val)
 	} else {
 		insertNonFull(t.root, val)
 	}
+	return nil
 }
 
 func main() {
 	fmt.Println("B-Tree Example")
 	t := NewBTree()
-	fmt.Printf("Root : %+v\n", t.root.keys)
 	Insert(21, t)
+	Insert(22, t)
+	Insert(20, t)
+	fmt.Printf("Root : %+v\n", t.root.keys)
 }
