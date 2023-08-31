@@ -2,38 +2,44 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 )
 
 type args struct {
 	val int
-	t   *bTree
 }
 
 type testObj struct {
 	name    string
 	args    args
+	want    any
 	wantErr bool
 }
 
 func TestInsert(t *testing.T) {
 	bTree := NewBTree()
 	tests := make([]testObj, 0)
-	tests = append(tests, unitTestMaker("success_leaf_add_1", args{21, bTree}))
-	tests = append(tests, unitTestMaker("success_leaf_add_2", args{19, bTree}))
-	tests = append(tests, unitTestMaker("success_leaf_add_3", args{22, bTree}))
+	for i := 0; i < 2*T-1; i++ {
+		name := fmt.Sprintf("success_leaf_add_%v", i)
+		tests = append(tests, unitTestMaker(name, args{rand.Intn(10000)}, nil))
+	}
+	for i := 0; i < 2*T-1; i++ {
+		name := fmt.Sprintf("success_node_add_%v", i)
+		tests = append(tests, unitTestMaker(name, args{rand.Intn(10000)}, nil))
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Insert(tt.args.val, tt.args.t); (err != nil) != tt.wantErr {
-				t.Errorf("Insert() error = %v, wantErr %v", err, tt.wantErr)
+			if err := bTree.Insert(tt.args.val); (err != nil) != tt.wantErr {
+				t.Errorf("bTree.Insert() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
-	fmt.Printf("Tree root: %+v", bTree.root.keys)
+	bTree.PrintTree(bTree.root)
 }
 
-func unitTestMaker(testName string, testAgrs args) testObj {
+func unitTestMaker(testName string, testAgrs args, want any) testObj {
 	var test testObj
 	isSuccess := true
 	test.name = testName
@@ -42,6 +48,31 @@ func unitTestMaker(testName string, testAgrs args) testObj {
 		test.wantErr = !isSuccess
 	}
 	test.args = testAgrs
+	test.want = want
 
 	return test
+}
+
+func Test_bTree_Search(t *testing.T) {
+	bTree := NewBTree()
+	tests := make([]testObj, 0)
+	for i := 0; i < 3*T; i++ {
+		bTree.Insert(rand.Intn(100))
+	}
+	bTree.Insert(9999)
+	bTree.PrintTree(bTree.root)
+	tests = append(tests, unitTestMaker("success_find_1", args{val: 9999}, true))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tr := bTree
+			got, err := tr.Search(tt.args.val)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("bTree.Search() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("bTree.Search() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
