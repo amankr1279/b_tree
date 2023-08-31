@@ -35,21 +35,24 @@ func splitNode(x *node, index int) {
 	for i := 0; i < T-1; i++ {
 		rightChild.keys = append(rightChild.keys, leftChild.keys[i+T])
 	}
+	leftChild.keys = leftChild.keys[:T]
 	if !leftChild.isLeaf {
 		for i := 0; i < T; i++ {
 			rightChild.children = append(rightChild.children, leftChild.children[i+T])
 		}
+		leftChild.children = leftChild.children[:T]
 	}
 	x.children = append(x.children, nil)
-	for i := n + 1; i >= index+1; i-- {
+	for i := n; i > index+1; i-- {
 		x.children[i] = x.children[i-1]
 	}
 	x.children[index+1] = rightChild
 	x.keys = append(x.keys, 0)
-	for i := n; i > index; i-- {
+	for i := n - 1; i > index; i-- {
 		x.keys[i] = x.keys[i-1]
 	}
-	x.keys[index] = leftChild.keys[T]
+	x.keys[index] = leftChild.keys[T-1]
+	leftChild.keys = leftChild.keys[:T-1]
 }
 
 func insertNonFull(x *node, val int) {
@@ -71,8 +74,8 @@ func insertNonFull(x *node, val int) {
 			if val > x.keys[i] {
 				i++
 			}
-			insertNonFull(x, val)
 		}
+		insertNonFull(x.children[i], val)
 	}
 }
 
@@ -84,13 +87,29 @@ func Insert(val int, t *bTree) error {
 	n := len(t.root.keys)
 	if n == 2*T-1 {
 		newRoot := NewNode()
+		newRoot.isLeaf = false
 		newRoot.children = append(newRoot.children, t.root)
-		splitNode(newRoot, 0)
-		insertNonFull(newRoot, val)
+		t.root = newRoot
+		splitNode(t.root, 0)
+		insertNonFull(t.root, val)
 	} else {
 		insertNonFull(t.root, val)
 	}
 	return nil
+}
+
+func (t *bTree) PrintTree(n *node) {
+	if n.isLeaf {
+		for j := 0; j < len(n.keys); j++ {
+			fmt.Printf("%v ", n.keys[j])
+		}
+	} else {
+		for i := 0; i < len(n.keys); i++ {
+			t.PrintTree(n.children[i])
+			fmt.Printf("%v ", n.keys[i])
+		}
+		t.PrintTree(n.children[len(n.keys)])
+	}
 }
 
 func main() {
@@ -99,5 +118,8 @@ func main() {
 	Insert(21, t)
 	Insert(22, t)
 	Insert(20, t)
-	fmt.Printf("Root : %+v\n", t.root.keys)
+	Insert(23, t)
+	Insert(18, t)
+	Insert(25, t)
+	t.PrintTree(t.root)
 }
