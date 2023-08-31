@@ -79,11 +79,7 @@ func insertNonFull(x *node, val int) {
 	}
 }
 
-func Insert(val int, t *bTree) error {
-	if t == nil {
-		err := fmt.Errorf("empty tree")
-		return err
-	}
+func insert(val int, t *bTree) {
 	n := len(t.root.keys)
 	if n == 2*T-1 {
 		newRoot := NewNode()
@@ -95,6 +91,14 @@ func Insert(val int, t *bTree) error {
 	} else {
 		insertNonFull(t.root, val)
 	}
+}
+
+func (t *bTree) Insert(val int) error {
+	if t == nil {
+		err := fmt.Errorf("empty tree")
+		return err
+	}
+	insert(val, t)
 	return nil
 }
 
@@ -112,14 +116,63 @@ func (t *bTree) PrintTree(n *node) {
 	}
 }
 
+func search(n *node, val int) bool {
+	if n == nil {
+		return false
+	}
+	numKeys := len(n.keys)
+	numChildren := len(n.children)
+	if numKeys == 0 {
+		return false
+	}
+	if n.keys[0] < val && val <= n.keys[numKeys-1] {
+		for i := 0; i < numKeys-1; i++ {
+			if n.keys[i] == val {
+				return true
+			}
+			if n.keys[i] < val && n.keys[i+1] > val && numChildren >= (i+1) {
+				return search(n.children[i+1], val)
+			}
+		}
+		if n.keys[numKeys-1] == val {
+			return true
+		}
+	} else if n.keys[numKeys-1] < val {
+		if numChildren == 1+numKeys {
+			return search(n.children[numKeys], val)
+		}
+	} else {
+		if !n.isLeaf {
+			return search(n.children[0], val)
+		}
+	}
+	return false
+}
+
+func (t *bTree) Search(val int) (bool, error) {
+	if t == nil {
+		err := fmt.Errorf("empty tree")
+		return false, err
+	}
+	exists := search(t.root, val)
+	if exists {
+		fmt.Println("Found", val)
+	} else {
+		fmt.Println("Does not exist", val)
+	}
+	return exists, nil
+}
+
 func main() {
 	fmt.Println("B-Tree Example")
 	t := NewBTree()
-	Insert(21, t)
-	Insert(22, t)
-	Insert(20, t)
-	Insert(23, t)
-	Insert(18, t)
-	Insert(25, t)
+	t.Insert(5)
+	t.Insert(8)
+	t.Insert(10)
+	t.Insert(12)
+	t.Insert(14)
+	t.Insert(4)
+	t.Insert(6)
+	t.Search(14)
 	t.PrintTree(t.root)
 }
