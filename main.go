@@ -9,7 +9,7 @@ type node struct {
 	isLeaf   bool
 }
 
-type bTree struct {
+type BTree struct {
 	root *node
 }
 
@@ -21,79 +21,13 @@ func NewNode() *node {
 	}
 }
 
-func NewBTree() *bTree {
-	return &bTree{
+func NewBTree() *BTree {
+	return &BTree{
 		root: NewNode(),
 	}
 }
 
-func splitNode(x *node, index int) {
-	rightChild := NewNode()
-	leftChild := x.children[index]
-	n := len(x.keys)
-	rightChild.isLeaf = leftChild.isLeaf
-	for i := 0; i < T-1; i++ {
-		rightChild.keys = append(rightChild.keys, leftChild.keys[i+T])
-	}
-	leftChild.keys = leftChild.keys[:T]
-	if !leftChild.isLeaf {
-		for i := 0; i < T; i++ {
-			rightChild.children = append(rightChild.children, leftChild.children[i+T])
-		}
-		leftChild.children = leftChild.children[:T]
-	}
-	x.children = append(x.children, nil)
-	for i := n; i > index+1; i-- {
-		x.children[i] = x.children[i-1]
-	}
-	x.children[index+1] = rightChild
-	x.keys = append(x.keys, 0)
-	for i := n - 1; i > index; i-- {
-		x.keys[i] = x.keys[i-1]
-	}
-	x.keys[index] = leftChild.keys[T-1]
-	leftChild.keys = leftChild.keys[:T-1]
-}
-
-func insertNonFull(x *node, val int) {
-	i := len(x.keys) - 1 // last filled index
-	if x.isLeaf {
-		x.keys = append(x.keys, val) // just for maintaining indices
-		for i >= 0 && val < x.keys[i] {
-			x.keys[i+1] = x.keys[i]
-			i--
-		}
-		x.keys[i+1] = val
-	} else {
-		for i >= 0 && val < x.keys[i] {
-			i--
-		}
-		i++
-		if len(x.children) == (2*T - 1) {
-			splitNode(x, i)
-			if val > x.keys[i] {
-				i++
-			}
-		}
-		insertNonFull(x.children[i], val)
-	}
-}
-
-func insert(val int, t *bTree) {
-	n := len(t.root.keys)
-	if n == 2*T-1 {
-		newRoot := NewNode()
-		newRoot.isLeaf = false
-		newRoot.children = append(newRoot.children, t.root)
-		t.root = newRoot
-		splitNode(t.root, 0)
-		insertNonFull(t.root, val)
-	} else {
-		insertNonFull(t.root, val)
-	}
-}
-
-func (t *bTree) Insert(val int) error {
+func (t *BTree) Insert(val int) error {
 	if t == nil {
 		err := fmt.Errorf("empty tree")
 		return err
@@ -102,54 +36,31 @@ func (t *bTree) Insert(val int) error {
 	return nil
 }
 
-func (t *bTree) PrintTree(n *node) {
+func printTree(n *node) {
 	if n.isLeaf {
 		for j := 0; j < len(n.keys); j++ {
 			fmt.Printf("%v ", n.keys[j])
 		}
 	} else {
 		for i := 0; i < len(n.keys); i++ {
-			t.PrintTree(n.children[i])
+			printTree(n.children[i])
 			fmt.Printf("%v ", n.keys[i])
 		}
-		t.PrintTree(n.children[len(n.keys)])
+		printTree(n.children[len(n.keys)])
 	}
 }
 
-func search(n *node, val int) *node {
-	if n == nil {
-		return nil
+func (t *BTree) PrintTree() error {
+	if t == nil {
+		err := fmt.Errorf("empty tree")
+		return err
 	}
-	numKeys := len(n.keys)
-	numChildren := len(n.children)
-	if numKeys == 0 {
-		return nil
-	}
-	if n.keys[0] <= val && val <= n.keys[numKeys-1] {
-		for i := 0; i < numKeys-1; i++ {
-			if n.keys[i] == val {
-				return n
-			}
-			if n.keys[i] < val && n.keys[i+1] > val && numChildren >= (i+1) {
-				return search(n.children[i+1], val)
-			}
-		}
-		if n.keys[numKeys-1] == val {
-			return n
-		}
-	} else if n.keys[numKeys-1] < val {
-		if numChildren == 1+numKeys {
-			return search(n.children[numKeys], val)
-		}
-	} else {
-		if !n.isLeaf {
-			return search(n.children[0], val)
-		}
-	}
+	printTree(t.root)
+	fmt.Println("")
 	return nil
 }
 
-func (t *bTree) Search(val int) (bool, error) {
+func (t *BTree) Search(val int) (bool, error) {
 	if t == nil {
 		err := fmt.Errorf("empty tree")
 		return false, err
@@ -165,26 +76,41 @@ func (t *bTree) Search(val int) (bool, error) {
 	return exists, nil
 }
 
-func (t *bTree) Delete(val int) error {
-	if t == nil {
+func (t *BTree) Delete(key int) error {
+	if t.root == nil {
 		err := fmt.Errorf("empty tree")
 		return err
 	}
 
+	if !t.root.isLeaf && len(t.root.keys) == 0 {
+		// If the root has no keys and is not a leaf, set the root to its only child.
+		t.root = t.root.children[0]
+	}
+
+	deleteNode(&t.root, key)
 	return nil
 }
 
-func (t *bTree) Update(oldVal int, newVal int) error {
+func (t *BTree) Update(oldVal int, newVal int) error {
+	var err error
 	if t == nil {
-		err := fmt.Errorf("empty tree")
+		err = fmt.Errorf("empty tree")
 		return err
 	}
 	n := search(t.root, oldVal)
 	if n == nil {
-		err := fmt.Errorf("old key not in tree")
+		err = fmt.Errorf("old key not in tree")
 		return err
 	}
 	// delete oldVal and insert newVal
+	err = t.Delete(oldVal)
+	if err != nil {
+		return err
+	}
+	err = t.Insert(newVal)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -199,6 +125,6 @@ func main() {
 	t.Insert(4)
 	t.Insert(6)
 	t.Search(10)
-	// t.Update(10, 13)
-	t.PrintTree(t.root)
+	t.Update(10, 13)
+	t.PrintTree()
 }
