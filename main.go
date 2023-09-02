@@ -116,26 +116,26 @@ func (t *bTree) PrintTree(n *node) {
 	}
 }
 
-func search(n *node, val int) bool {
+func search(n *node, val int) *node {
 	if n == nil {
-		return false
+		return nil
 	}
 	numKeys := len(n.keys)
 	numChildren := len(n.children)
 	if numKeys == 0 {
-		return false
+		return nil
 	}
-	if n.keys[0] < val && val <= n.keys[numKeys-1] {
+	if n.keys[0] <= val && val <= n.keys[numKeys-1] {
 		for i := 0; i < numKeys-1; i++ {
 			if n.keys[i] == val {
-				return true
+				return n
 			}
 			if n.keys[i] < val && n.keys[i+1] > val && numChildren >= (i+1) {
 				return search(n.children[i+1], val)
 			}
 		}
 		if n.keys[numKeys-1] == val {
-			return true
+			return n
 		}
 	} else if n.keys[numKeys-1] < val {
 		if numChildren == 1+numKeys {
@@ -146,7 +146,7 @@ func search(n *node, val int) bool {
 			return search(n.children[0], val)
 		}
 	}
-	return false
+	return nil
 }
 
 func (t *bTree) Search(val int) (bool, error) {
@@ -154,13 +154,38 @@ func (t *bTree) Search(val int) (bool, error) {
 		err := fmt.Errorf("empty tree")
 		return false, err
 	}
-	exists := search(t.root, val)
-	if exists {
+	foundNode := search(t.root, val)
+	exists := false
+	if foundNode != nil {
 		fmt.Println("Found", val)
+		exists = true
 	} else {
 		fmt.Println("Does not exist", val)
 	}
 	return exists, nil
+}
+
+func (t *bTree) Delete(val int) error {
+	if t == nil {
+		err := fmt.Errorf("empty tree")
+		return err
+	}
+
+	return nil
+}
+
+func (t *bTree) Update(oldVal int, newVal int) error {
+	if t == nil {
+		err := fmt.Errorf("empty tree")
+		return err
+	}
+	n := search(t.root, oldVal)
+	if n == nil {
+		err := fmt.Errorf("old key not in tree")
+		return err
+	}
+	// delete oldVal and insert newVal
+	return nil
 }
 
 func main() {
@@ -173,6 +198,7 @@ func main() {
 	t.Insert(14)
 	t.Insert(4)
 	t.Insert(6)
-	t.Search(14)
+	t.Search(10)
+	// t.Update(10, 13)
 	t.PrintTree(t.root)
 }
