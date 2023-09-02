@@ -99,7 +99,9 @@ func balanceChildren(n **node, index int) {
 		leftSibling.keys = leftSibling.keys[:len(leftSibling.keys)-1]
 		(*n).keys = append((*n).keys[:index-1], borrowedKey)
 		// Adjust the child pointer
-		child.children = append([]*node{child.children[0]}, child.children...)
+		if len(child.children) > 0 {
+			child.children = append([]*node{child.children[0]}, child.children...)
+		}
 		// Adjust the left sibling pointer
 		leftSibling.children = leftSibling.children[:len(leftSibling.children)-1]
 	} else if index < len((*n).children)-1 && len((*n).children[index+1].keys) >= T {
@@ -112,7 +114,9 @@ func balanceChildren(n **node, index int) {
 		rightSibling.keys = rightSibling.keys[1:]
 		(*n).keys = append((*n).keys[:index], borrowedKey)
 		// Adjust the child pointer
-		child.children = append(child.children, child.children[len(child.children)-1])
+		if len(child.children) > 0 {
+			child.children = append(child.children, child.children[len(child.children)-1])
+		}
 		// Adjust the right sibling pointer
 		rightSibling.children = rightSibling.children[1:]
 	} else {
