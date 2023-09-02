@@ -56,12 +56,17 @@ func unitTestMaker(testName string, testAgrs args, want any) testObj {
 func Test_bTree_Search(t *testing.T) {
 	bTree := NewBTree()
 	tests := make([]testObj, 0)
+	nums := make([]int, 0)
 	for i := 0; i < 3*T; i++ {
-		bTree.Insert(rand.Intn(100))
+		x := rand.Intn(100)
+		nums = append(nums, x)
+		bTree.Insert(x)
 	}
-	bTree.Insert(9999)
 	bTree.PrintTree(bTree.root)
-	tests = append(tests, unitTestMaker("success_find_1", args{val: 9999}, true))
+	for i := 0; i < len(nums); i++ {
+		name := fmt.Sprintf("success_find_%v", i+1)
+		tests = append(tests, unitTestMaker(name, args{val: nums[i]}, true))
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tr := bTree
