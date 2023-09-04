@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-const T int = 1000 // minimum degree --> Could be made part of the tree
+var T int // minimum order
 type node struct {
 	keys     []int
 	children []*node
@@ -21,7 +21,11 @@ func NewNode() *node {
 	}
 }
 
-func NewBTree() *BTree {
+func NewBTree(val ...int) *BTree {
+	if len(val) == 0 {
+		val = append(val, 10)
+	}
+	T = val[0]
 	return &BTree{
 		root: NewNode(),
 	}
