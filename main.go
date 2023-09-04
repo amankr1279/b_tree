@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 var T int // minimum order
 type node struct {
@@ -11,6 +14,7 @@ type node struct {
 
 type BTree struct {
 	root *node
+	mu   sync.Mutex
 }
 
 func NewNode() *node {
@@ -36,22 +40,10 @@ func (t *BTree) Insert(val int) error {
 		err := fmt.Errorf("empty tree")
 		return err
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	insert(val, t)
 	return nil
-}
-
-func printTree(n *node) {
-	if n.isLeaf {
-		for j := 0; j < len(n.keys); j++ {
-			fmt.Printf("%v ", n.keys[j])
-		}
-	} else {
-		for i := 0; i < len(n.keys); i++ {
-			printTree(n.children[i])
-			fmt.Printf("%v ", n.keys[i])
-		}
-		printTree(n.children[len(n.keys)])
-	}
 }
 
 func (t *BTree) PrintTree() error {
@@ -59,6 +51,8 @@ func (t *BTree) PrintTree() error {
 		err := fmt.Errorf("empty tree")
 		return err
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	printTree(t.root)
 	fmt.Println("")
 	return nil
@@ -69,6 +63,8 @@ func (t *BTree) Search(val int) (bool, error) {
 		err := fmt.Errorf("empty tree")
 		return false, err
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	foundNode := search(t.root, val)
 	exists := false
 	if foundNode != nil {
@@ -85,6 +81,8 @@ func (t *BTree) Delete(key int) error {
 		err := fmt.Errorf("empty tree")
 		return err
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if !t.root.isLeaf && len(t.root.keys) == 0 {
 		// If the root has no keys and is not a leaf, set the root to its only child.
@@ -131,5 +129,6 @@ func main() {
 	t.Search(10)
 	t.Update(10, 13)
 	t.PrintTree()
-	benchmark(t)
+	// benchmark(t)
+	// concurrency(t)
 }
