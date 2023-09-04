@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-const T int = 3 // minimum degree --> Could be made part of the tree
+const T int = 1000 // minimum degree --> Could be made part of the tree
 type node struct {
 	keys     []int
 	children []*node
@@ -127,4 +127,5 @@ func main() {
 	t.Search(10)
 	t.Update(10, 13)
 	t.PrintTree()
+	benchmark(t)
 }
